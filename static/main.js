@@ -1,10 +1,20 @@
 
 
-document.getElementById("runButton").onclick = () => {
+
+
+document.getElementById("runButton").onclick = run;
+
+document.addEventListener("keypress", (e) => {
+    if (e.ctrlKey && e.key == "Enter") run();
+    
+});
+
+
+function run() {
     sendPost({
         'editor': document.getElementById("editor").value
     }, "/run");
-};
+}
 
 
 function sendPost(data, dest) {
