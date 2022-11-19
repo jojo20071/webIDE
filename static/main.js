@@ -1,29 +1,17 @@
 
 
 document.getElementById("runButton").onclick = () => {
-    sendPost(JSON.stringify({
-        editor: document.getElementById("editor").value
-    }), "/run");
+    sendPost({
+        'editor': document.getElementById("editor").value
+    }, "/run");
 };
 
 
-function sendPost(postData, dest) {
-    var options = {
-        hostname: '',
-        path: dest,
-        method: 'POST',
-        headers: {
-             'Content-Type': 'application/json',
-             'Content-Length': postData.length
-           }
-      };
+function sendPost(data, dest) {
+    var http = new XMLHttpRequest();
 
-    var req = https.request(options, (res) => {
-        console.log('statusCode:', res.statusCode);        
-    });
+    http.open('POST', dest);
+    http.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    http.send(JSON.stringify(data));
 
-    req.on('error', console.error);
-
-    req.write(postData);
-    req.end();
 }
