@@ -9,7 +9,6 @@ def home():
 
 @app.route("/run", methods = ['POST', 'GET'])
 def run():
-    print(flask.request.method)
     if flask.request.method == 'GET':
         return flask.redirect('/')
     

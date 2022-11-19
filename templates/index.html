@@ -1,31 +1,80 @@
+<!DOCTYPE html>
+
 <html>
     <header>
         <style>
-            textarea {
-                width: 600px;
-                height: 300px;
-                background-color: black; 
-                color: white
-            }
-
             body { 
                 background-color: black; 
-            }
-
-            label {
+                font-family: consolas;
                 color: white
-
+            }
+                        
+            textarea {
+                vertical-align: top;
+                margin: 0px;
+                padding: 0px;
+                padding-left: 5px;
+                display: inline-block;
+                resize: none;
+                width:  600px;
+                height: 300px;   
+                border: 1px solid white;
+                background-color: black; 
+                font-family: consolas;
+                color: white                        
+            }
+            
+            
+            p {
+                vertical-align: top;
+                margin: 0px;
+                padding: 0px;
+                display: inline-block;
+                width:  600px;
+                height: 300px;            
+                border: 1px solid white;
+                position: relative;
+            }
+         
+            .centre {
+                display: table; margin: auto;
+            
+            }
+         
+            input {
+                background-color: #3A7800; 
+                color: #6CD97E;
+                border: 0px;
+            }
+            
+            input:hover {
+                background-color: #3AD500;
+                color: #FFFFFF;
+                border: 0px;
             }
 
+            .biggreenbutton {
+                border-radius: 10px;
+                margin: 10px 10px;
+                height: 50px;
+                width:  100px;
+                font-size: 100%;
+            }
+         
         </style>
     </header>
     <body>
+        <text style="font-size: 50px; margin-bottom: 20px" class="centre">Baabnq Web IDE</text>
+        <div class = "centre">
+            <textarea id = "editor"></textarea>
+            <p id = "output"></p>
+            <br>
+            <input class = "biggreenbutton" id = "runButton" type = "button" value = "Run"/>
+        </div>
+        
+        
 
-        <textarea id = "editor"></textarea>
-        <br/>
-        <input id = "runButton"     type = "button" value = "run"/>
 
         <script src="{{ url_for('static', filename='main.js') }}"></script>
-
     </body>
 <html>
