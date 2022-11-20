@@ -2,6 +2,7 @@ import flask
 import threading
 import sys
 import io
+import os
 
 import Compiler
 import vm
@@ -22,6 +23,9 @@ Compiler.cUtils.Error = error
 def home():
     return flask.render_template("index.html")    
 
+@app.route("/favicon.ico")
+def favicon():
+    return flask.send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico')
 
 @app.route("/run", methods = ['POST', 'GET'])
 def run():
