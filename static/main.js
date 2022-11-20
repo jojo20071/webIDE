@@ -25,9 +25,15 @@ function sendPost(data, dest) {
 
     http.onreadystatechange = () => {
         if (http.readyState == 4 && http.status == 200)
-            document.getElementById("output").innerHTML = http.responseText;
+            setOutput(http.responseText);
     }
 
 
     http.send(JSON.stringify(data));
+    setOutput("Running ...");
+}
+
+
+function setOutput(msg) {
+    document.getElementById("output").innerHTML = msg;
 }
