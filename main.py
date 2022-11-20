@@ -33,7 +33,6 @@ def run():
         return flask.redirect('/')
     
     xEditorContent = flask.request.get_json()['editor']
-    print(xEditorContent)
 
     try:
         xCompiler = Compiler.cCompiler()
