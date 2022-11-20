@@ -1,11 +1,27 @@
 import flask
+import threading
+import sys
+import io
+
+import Compiler
+import vm
+
+
+def error(x):
+    raise Exception(x)
+
+
 
 
 app = flask.Flask(__name__)
+Compiler.cUtils.Error = error
+
+
 
 @app.route("/")
 def home():
     return flask.render_template("index.html")    
+
 
 @app.route("/run", methods = ['POST', 'GET'])
 def run():
@@ -13,7 +29,38 @@ def run():
         return flask.redirect('/')
     
     xEditorContent = flask.request.get_json()['editor']
-    print(xEditorContent)
+
+    try:
+        xCompiler = Compiler.cCompiler()
+        xAsm = xCompiler.Compile(xEditorContent)[0]
+    except Exception as E:
+        return str(E)
+    
+    else:
+        xVM = vm.cMain()
+        xVM.LoadFile(xAsm)
+        
+        xTempStd = sys.stdout
+        sys.stdout = xStdOutCap = io.StringIO()
+        
+        xRunner = threading.Thread(target = xVM.Interpret)
+        xRunner.start()
+        xRunner.join(timeout = 30)
+                    
+        if xRunner.is_alive():
+            return 'Timeout reached, killing runner (sorry QwQ)'
+            xVM.xProgrammIndex = len(xVM.xLineStructures) + 1
+            
+        else:
+            xOutput = xStdOutCap.getvalue()
+            return xOutput
+                
+
+            
+        sys.stdout = xTempStd
+        xRunner.join()
+
+    
 
     return 'a'
     

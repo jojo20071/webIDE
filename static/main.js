@@ -22,6 +22,12 @@ function sendPost(data, dest) {
 
     http.open('POST', dest);
     http.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
-    http.send(JSON.stringify(data));
 
+    http.onreadystatechange = () => {
+        if (http.readyState == 4 && http.status == 200)
+            document.getElementById("output").innerHTML = http.responseText;
+    }
+
+
+    http.send(JSON.stringify(data));
 }

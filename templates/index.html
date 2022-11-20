@@ -15,27 +15,15 @@
                 padding: 0px;
                 padding-left: 5px;
                 display: inline-block;
-                resize: none;
                 width:  600px;
                 height: 300px;   
                 border: 1px solid white;
                 background-color: black; 
                 font-family: consolas;
-                color: white                        
+                color: white;
             }
             
-            
-            p {
-                vertical-align: top;
-                margin: 0px;
-                padding: 0px;
-                display: inline-block;
-                width:  600px;
-                height: 300px;            
-                border: 1px solid white;
-                position: relative;
-            }
-         
+                     
             .centre {
                 display: table; margin: auto;
             
@@ -67,7 +55,7 @@
         <text style="font-size: 50px; margin-bottom: 20px" class="centre">Baabnq Web IDE</text>
         <div class = "centre">
             <textarea id = "editor"></textarea>
-            <p id = "output"></p>
+            <textarea readonly id = "output"></textarea>
             <br>
             <input class = "biggreenbutton" id = "runButton" type = "button" value = "Run"/>
             <text>Or press Ctrl + Enter to run</text>
