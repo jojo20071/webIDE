@@ -37,6 +37,7 @@ def run():
     try:
         xCompiler = Compiler.cCompiler()
         xAsm = xCompiler.Compile(xEditorContent)[0]
+
     except Exception as E:
         return str(E)
     
@@ -49,8 +50,9 @@ def run():
         
         xRunner = threading.Thread(target = xVM.Interpret)
         xRunner.start()
-        xRunner.join(timeout = 30)
+        xRunner.join(timeout = 3)
                     
+        sys.stdout = xTempStd
         if xRunner.is_alive():
             return 'Timeout reached, killing runner (sorry QwQ)'
             xVM.xProgrammIndex = len(xVM.xLineStructures) + 1
@@ -58,10 +60,7 @@ def run():
         else:
             xOutput = xStdOutCap.getvalue()
             return xOutput
-                
-
-            
-        sys.stdout = xTempStd
+                            
         xRunner.join()
 
     
