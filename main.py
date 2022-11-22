@@ -50,18 +50,16 @@ def run():
         
         xRunner = threading.Thread(target = xVM.Interpret)
         xRunner.start()
-        xRunner.join(timeout = 3)
+        xRunner.join(timeout = 30)
                     
         sys.stdout = xTempStd
-        if xRunner.is_alive():
-            return 'Timeout reached, killing runner (sorry QwQ)'
-            xVM.xProgrammIndex = len(xVM.xLineStructures) + 1
-            
-        else:
+        if not xRunner.is_alive():
             xOutput = xStdOutCap.getvalue()
             return xOutput
-                            
+        
+        xVM.xRunning = False
         xRunner.join()
+        return 'Timeout reached, killing runner (sorry QwQ)'
 
     
     

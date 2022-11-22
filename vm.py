@@ -142,6 +142,8 @@ class cMain:
         self.xPluginEnv = cPluginEnv()
         self.xPluginEnv.xMem   = self.xMem
         self.xPluginEnv.xStack = self.xStack
+        
+        self.xRunning = True
                 
     def Reset(self):                                    
         self.xReg = cInt(0, self.xIntLimit)
@@ -356,7 +358,7 @@ test file format:
                 
         try:
             xStartTime = time.time()
-            while self.xProgrammIndex < len(self.xLineStructures):                
+            while self.xProgrammIndex < len(self.xLineStructures) and self.xRunning:        
                 xLine = self.xLineStructures[self.xProgrammIndex]
                 if self.xConfig["PrintCommand"]: print(xLine)
                 
