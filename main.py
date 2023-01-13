@@ -33,6 +33,7 @@ def run():
         return flask.redirect('/')
     
     xEditorContent = flask.request.get_json()['editor']
+    print(xEditorContent)
 
     try:
         xCompiler = Compiler.cCompiler()
@@ -55,6 +56,7 @@ def run():
         sys.stdout = xTempStd
         if not xRunner.is_alive():
             xOutput = xStdOutCap.getvalue()
+            print(xOutput)
             return xOutput
         
         xVM.xRunning = False
@@ -64,4 +66,5 @@ def run():
     
     
 if __name__ == '__main__':
-    app.run(debug = True, host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=80, threaded=True)
+    
