@@ -41,26 +41,32 @@ def run():
 
     except Exception as E:
         return str(E)
-    
-    xProg = vm.cProg(xAsm)
-    
-    xTempStd = sys.stdout
-    sys.stdout = xStdOutCap = io.StringIO()
-    
-    xRunner = threading.Thread(target = xProg.Run)
-    xRunner.start()
-    xRunner.join(timeout = 0.1)
-                
-    sys.stdout = xTempStd
-    if not xRunner.is_alive():
-        xOutput = xStdOutCap.getvalue()
-        print(xOutput)
-        return xOutput
-    
-    xVM.xRunning = False
-    xRunner.join()
-    return 'Timeout reached, killing runner (sorry QwQ)'
 
+
+    try:
+        xProg = vm.cProg(xAsm)
+        
+        xTempStd = sys.stdout = xStdOutCap = io.StringIO()
+        
+        xRunner = threading.Thread(target = xProg.Run)
+        xRunner.start()
+        xRunner.join(timeout = 0.1)
+                    
+        sys.stdout = xTempStd
+        if not xRunner.is_alive():
+            xOutput = xStdOutCap.getvalue()
+            print(xOutput)
+            return xOutput
+
+        else:
+            xVM.xRunning = False
+            xRunner.join()
+            return 'Timeout reached, killing runner (sorry QwQ)'
+
+    except Exception as E:
+        print(E)
+        
+        return 'Error: VM crashed, probably some misspelled label, or other symbol mismatch.'
     
     
 if __name__ == '__main__':
