@@ -42,26 +42,24 @@ def run():
     except Exception as E:
         return str(E)
     
-    else:
-        xVM = vm.cMain()
-        xVM.LoadFile(xAsm)
-        
-        xTempStd = sys.stdout
-        sys.stdout = xStdOutCap = io.StringIO()
-        
-        xRunner = threading.Thread(target = xVM.Interpret)
-        xRunner.start()
-        xRunner.join(timeout = 30)
-                    
-        sys.stdout = xTempStd
-        if not xRunner.is_alive():
-            xOutput = xStdOutCap.getvalue()
-            print(xOutput)
-            return xOutput
-        
-        xVM.xRunning = False
-        xRunner.join()
-        return 'Timeout reached, killing runner (sorry QwQ)'
+    xProg = vm.cProg(xAsm)
+    
+    xTempStd = sys.stdout
+    sys.stdout = xStdOutCap = io.StringIO()
+    
+    xRunner = threading.Thread(target = xProg.Run)
+    xRunner.start()
+    xRunner.join(timeout = 0.1)
+                
+    sys.stdout = xTempStd
+    if not xRunner.is_alive():
+        xOutput = xStdOutCap.getvalue()
+        print(xOutput)
+        return xOutput
+    
+    xVM.xRunning = False
+    xRunner.join()
+    return 'Timeout reached, killing runner (sorry QwQ)'
 
     
     
