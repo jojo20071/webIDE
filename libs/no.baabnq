@@ -1,0 +1,33 @@
+"panic / stacktrace lib
+
+use 'libs/string.baabnq';
+static 'PANIC\n' _No::pPanic;
+
+jump No::Skip;
+
+"dump the stack and then crash
+lab No::Panic;
+    push _No::pPanic;
+    sub String::Print;
+
+    lab No::Panic::Loop;
+        pull __;
+        print __;
+    jump No::Panic::Loop ~ __ != 0;
+
+    asm 'brk;';
+
+"return guard, if called by function, function returns
+lab No::Return;
+    "pull sub addr
+    pull __;
+
+    "jump back to original retaddr
+    return;
+
+
+lab No::No;
+    
+
+
+lab No::Skip;

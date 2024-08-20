@@ -1,0 +1,167 @@
+"2's compliment lib
+
+use 'libs/stack.baabnq';
+use 'libs/math.baabnq';
+
+jump Twoc::Skip;
+
+
+"(Value::Comp) => (Sign::Bool)
+lab Twoc::GetSign;
+    sub Stack::Swap;
+    pull _Temp;
+    push (_Temp >> 15) & 1;
+    sub Stack::Swap;
+    return;
+
+"(Value::Comp) => (Value::Comp)
+lab Twoc::Neg;
+    sub Stack::Swap;
+    pull _Temp;
+    push (_Temp ^ (0 - 1)) + 1;
+    sub Stack::Swap;
+    return;
+
+"(Value::Comp) => (Value::Int, Sign::Bool)
+lab Twoc::Get;
+    sub Stack::Swap;
+    pull _Temp;
+    "sign    
+    put _Sign = (_Temp >> 15) & 1;
+    push _Sign;
+    sub Stack::Swap;
+    "value
+    push (_Temp ^ (0 - _Sign)) + _Sign;
+    sub Stack::Swap;
+    return;
+
+"(Value::Int, Sign::Bool) => (Value::Comp)
+lab Twoc::Set;
+    sub Stack::Swap;
+    pull _Sign;
+    sub Stack::Swap;
+    pull _Temp;
+
+    push (_Temp ^ (0 - _Sign)) + _Sign;
+    sub Stack::Swap;
+    return;
+    
+
+
+"(Value1::Comp, Value2::Comp) => (Product::Comp)
+"Product::Comp = Value1::Comp * Value2::Comp
+lab Twoc::Mul;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _val1;
+    pull _sgn1;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _val2;
+    pull _sgn2;
+
+    "value
+    push _val1;
+    push _val2;
+    sub Math::Mul;
+
+    "sign
+    push _sgn1 ^ _sgn2;
+
+    sub Twoc::Set;
+    sub Stack::Swap;
+    return;
+
+"(Num::Comp, Den::Comp) => (Frac::Comp)
+"Frac::Comp = Num::Comp / Den::Comp
+lab Twoc::Div;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _Val2;
+    pull _Sgn2;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _Val1;
+    pull _Sgn1;
+
+    "value
+    push _Val1;
+    push _Val2;
+    sub Math::Div;
+
+    "sign
+    push _Sgn1 ^ _Sgn2;
+
+    sub Twoc::Set;
+    sub Stack::Swap;
+    return;
+
+"(Big::Comp, Small::Comp) => (True::Bool)
+"True::Bool = Big::Comp > Small::Comp
+lab Twoc::Cmp;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _Val2; "small
+    pull _Sgn2;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _Val1; "big
+    pull _Sgn1;
+
+    "check sign
+    jump Twoc::Cmp::True ~  _Sgn1 < _Sgn2;
+    jump Twoc::Cmp::False ~ _Sgn1 > _Sgn2;
+    "check value
+    jump Twoc::Cmp::True ~  _Val1 > _Val2;
+    jump Twoc::Cmp::False ~ _Val1 < _Val2;
+    
+    "Big::Comp == Small::Comp, i luv label mechanisms
+    lab Twoc::Cmp::False;
+        push 0;
+        sub Stack::Swap;
+        return;
+
+    lab Twoc::Cmp::True;
+        push 1;
+        sub Stack::Swap;
+        return;
+
+"(Value::Comp, Offset::Comp) => (Value::Comp)
+"Value::Comp *= (2 ** Offset::Comp)
+lab Twoc::Shift;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _Val2; "offset
+    pull _Sgn2;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _Val1; "value
+    pull _Sgn1;
+    
+    push _Val1;
+    push _Val2;
+    sub Math::Shg ~ _Sgn2 == 0;
+    sub Math::Shs ~ _Sgn2 == 1;
+    
+    push _Sgn1;
+    sub Twoc::Set;
+    sub Stack::Swap;
+    return;
+
+"(Value::Comp) => IO
+lab Twoc::Print;
+    sub Stack::Swap;
+    sub Twoc::Get;
+    pull _Temp;
+    pull _Sign;
+    
+    "sign
+    jump Twoc::Print::Skip ~ _Sign == 0;
+        putchr 45;
+    lab Twoc::Print::Skip;
+
+    print _Temp;
+    return;
+
+lab Twoc::Skip;
+

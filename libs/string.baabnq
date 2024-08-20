@@ -1,0 +1,426 @@
+
+use 'libs/math.baabnq';
+use 'libs/stack.baabnq';
+use 'libs/fast.baabnq';
+
+
+jump String::Skip;
+
+"(Str::String*) => IO
+lab String::PrintString;
+lab String::Print;
+    sub Stack::Swap;
+    pull _pStr;
+
+
+    lab String::PrintString::Loop;
+        put _data <- _pStr;
+        put _pStr = _pStr + 1;
+        jump String::PrintString::Exit ~ _data == 0;
+
+        putchr _data;
+
+        jump String::PrintString::Loop;
+    lab String::PrintString::Exit;
+    return;
+
+"takes number, converts it to string
+"THIS WILL ALLOCATE MEMORY
+"(Num::Int) => (Str::String*)
+"int2str :: Int -> String
+"int2str = show
+lab String::Int2Str;
+    sub Stack::Swap;
+    pull _num;
+
+    "16-bit int limit is 65535, so 5 digits plus terminator
+    new 6 _pStr;
+    put 0 -> _pStr + 5;
+    put _pWrite = _pStr;
+    
+    "populate in reverse
+    put _i = 5;
+    lab String::Int2Str::Loop;
+        push _num;
+        sub Fast::DivMod10;
+        pull _num;
+        pull _digit;
+
+        jump String::Int2Str::DigitVaild ~ _num | _digit > 0; "digit is invaild when part of trailing zeros
+        jump String::Int2Str::DigitVaild ~            _i > 4; "the first digit is always vaild
+            put _digit = 0 - 48 + 32;
+        lab String::Int2Str::DigitVaild;                
+                
+        put _i = _i - 1;
+        put _digit + 48 -> _pStr + _i;
+
+    jump String::Int2Str::Loop ~ _i > 0;
+
+    push _pStr;
+    sub Stack::Swap;
+    
+    return;
+
+
+"(Str::String*) => (Num::Int)
+"StrToInt ← (⋕▽↧<@9,>@0.)
+lab String::Str2Int;
+    sub Stack::Swap;
+    pull _pStr;
+    
+    "accumulator on stack
+    push 0;
+    
+    lab String::Str2Int::Loop;
+        put _char <- _pStr;
+        put _pStr = _pStr + 1;
+
+        "acc = (acc * 10) + (char - 48)
+        jump String::Str2Int::InvaildChar ~ _char < (0 + 48);
+        jump String::Str2Int::InvaildChar ~ _char > (9 + 48);
+            sub Fast::Mul10;
+            push _char - 48;
+            sub Math::Add;
+        lab String::Str2Int::InvaildChar;
+
+    jump String::Str2Int::Loop ~ _char > 0;
+                
+    sub Stack::Swap;
+    return;
+
+
+"(Str::String*) => (Len::Int)
+"len :: [Char] -> Int
+"len [] = 0
+"len (x:xs) = ( len xs ) + 1
+"( ergo, length without terminator )
+lab String::StrLen;
+    sub Stack::Swap;
+    pull _pStr;
+
+    put _len = 0 - 1;
+    lab String::StrLen::Loop;
+        put _len = _len + 1;
+        put __ <- _pStr + _len;
+    jump String::StrLen::Loop ~ __ != 0;
+
+    push _len;
+    sub Stack::Swap;
+    return;
+    
+
+"(Src::Int*, Dst::Int*, Size::Int)
+lab String::MemCpy;
+    sub Stack::Swap;
+    pull _size;
+    sub Stack::Swap;
+    pull _pDest;
+    sub Stack::Swap;
+    pull _pSrc;
+
+    put _index = 0;
+
+    lab String::MemCpy::Loop;
+        jump String::MemCpy::Exit ~ _index == _size;
+        put _data <- _pSrc  + _index;
+        put _data -> _pDest + _index;
+
+        put _index = _index + 1;
+        jump String::MemCpy::Loop;
+    lab String::MemCpy::Exit;
+    
+    return;
+
+"(Src::String*, Dst::String*)    
+lab String::StrCpy;
+    sub Stack::Swap;
+    pull _pDst;
+    sub Stack::Swap;
+    pull _pSrc;
+    
+    lab String::StrCpy::Loop;
+        put _data <- _pSrc; put _pSrc = _pSrc + 1;
+        put _data -> _pDst; put _pDst = _pDst + 1;
+        
+    jump String::StrCpy::Loop ~ _data != 0;
+    
+    return;
+    
+"(Ptr::String*, Val::Int, Size::Int)
+lab String::MemSet;
+    sub Stack::Swap;
+    pull _size;
+    sub Stack::Swap;
+    pull _val;
+    sub Stack::Swap;
+    pull _ptr;
+    
+    lab String::MemSet::Loop;
+        jump String::MemSet::Exit ~ _size == 0;
+        put _size = _size - 1;
+        
+        put _val -> _ptr;
+        put _ptr =  _ptr + 1;
+        jump String::MemSet::Loop;
+    lab String::MemSet::Exit;
+    
+    return;
+    
+
+        
+"(Str1::String*, Str2::String*) => (Distance::Int)
+"StrCmp ← ⬚0(⊢▽≠0.⬚@ -) (in uiua, haskell impl. signat. was too long)
+lab String::StrCmp;
+    sub Stack::Swap;
+    pull _pStr2;
+    sub Stack::Swap;
+    pull _pStr1;
+    
+    lab String::StrCmp::Loop;
+        put _val1 <- _pStr1;
+        put _val2 <- _pStr2;
+        
+        jump String::StrCmp::Done ~ _val1 == 0;
+        jump String::StrCmp::Done ~ _val2 == 0;
+        jump String::StrCmp::Done ~ _val1 != _val2;
+        
+        put _pStr1 = _pStr1 + 1;
+        put _pStr2 = _pStr2 + 1;
+        jump String::StrCmp::Loop;
+    lab String::StrCmp::Done;
+    
+    push _val1 - _val2;
+    sub Stack::Swap;
+    return;       
+
+
+"(A::Int*, B::Int*, Count::Int) => (Distance::Int)
+"MemCmp ← ⬚0(⊢▽≠0.↙:⬚@ -)
+lab String::MemCmp;
+    sub Stack::Swap; pull _count;
+    sub Stack::Swap; pull _pB;
+    sub Stack::Swap; pull _pA;
+    
+    lab String::MemCmp::Loop;
+        put _a <- _pA;
+        put _b <- _pB;
+        
+        jump String::MemCmp::Done ~ _count == 0;
+        jump String::MemCmp::Done ~ _a != _b;
+        
+        put _count = _count - 1;
+        
+        put _pA = _pA + 1;
+        put _pB = _pB + 1;
+        jump String::MemCmp::Loop;
+    lab String::MemCmp::Done;
+    
+    push _a - _b;
+    sub Stack::Swap;
+    return;       
+
+"(Str::String*, Elem::Char) => (Match::Bool)
+"elem :: String -> Char -> Bool
+"elem []     _ = False
+"elem (x:xs) y = x == y || elem xs y
+lab String::ScanChar;
+lab String::StrChr;
+    sub Stack::Swap;
+    pull _char;
+    sub Stack::Swap;
+    pull _ptr;
+
+    lab String::ScanChar::IterLoop;
+        put _data <- _ptr;
+        put _ptr = _ptr + 1;
+
+        jump String::ScanChar::Found ~ _data == _char;
+    jump String::ScanChar::IterLoop ~ _data != 0;
+        
+        push 0;
+        sub Stack::Swap;
+        return;
+
+    lab String::ScanChar::Found;
+        push _ptr - 1;
+        sub Stack::Swap;
+        return;
+
+
+"(Str::String*, Elem::Char, Count::Int) => (Match::Bool)
+"MemChr ← (/↥↙:=)
+lab String::MemChr;
+    sub Stack::Swap; pull _count;
+    sub Stack::Swap; pull _char;
+    sub Stack::Swap; pull _ptr;
+
+    lab String::MemChr::IterLoop;
+        put _data <- _ptr;
+        put _ptr = _ptr + 1;
+        
+        put _count = _count - 1;
+        
+        jump String::MemChr::Found ~ _data == _char;
+    jump String::MemChr::IterLoop ~ _count > 0;
+
+        push 0;
+        sub Stack::Swap;
+        return;
+
+    lab String::MemChr::Found;
+        push _ptr - 1;
+        sub Stack::Swap;
+        return;
+
+"THIS WILL ALLOC AND NOT DEALLOC
+"(Str1::String*, Str2::String*) => (Res::String*)
+"concat :: String -> String -> String
+"concat ""     y = y
+"concat (x:xs) y = x : concat xs y
+lab String::Concat;
+    sub Stack::Swap;
+    pull _pStr2;
+    sub Stack::Swap;
+    pull _pStr1;
+
+    push _pStr1;
+    sub String::StrLen;
+    pull _len1;
+
+    push _pStr2;
+    sub String::StrLen;
+    pull _len2;
+
+    put _len = _len1 + _len2;
+    new _len + 1 _pStr;
+    put 0 -> _pStr + _len + 1;
+
+    push _pStr1;
+    push _pStr;
+    push _len1;
+    sub String::MemCpy;
+    push _pStr2;
+    push _pStr + _len1;
+    push _len2;
+    sub String::MemCpy;
+
+    push _pStr;
+    sub Stack::Swap;
+    return;
+
+
+
+"takes const char** and join strings into one DOES NOT DEALLOC
+
+"(Container::Char**) => (Sequence::Char*)
+"join :: [[Char]] -> [Char]
+"join [] = []
+"join (x:xs) = x ++ join xs
+lab String::Join;
+    sub Stack::Swap;
+    pull _pStrs;
+    
+    put _len <- _pStrs - 1;
+    push _len - 1;
+    
+    "calculate final len
+    put _count = 0;
+    put _index = 0;
+    lab String::Join::Count;
+        put _pSub <- _pStrs + _index;
+        push _pSub; 
+        sub String::StrLen; 
+        pull _size;
+        put _count = _count + _size;
+        put _index = _index + 1;
+        
+        sub Stack::Dup; pull _len;
+    jump String::Join::Count ~ _index < _len;
+
+    "alloc
+    new _count + 1 _pOut;
+    put 0 -> _pOut + _count;
+
+    "copy
+    put _iStrs = 0;
+    put _iOut = 0;
+    lab String::Join::Copy;
+        put _pSub <- _pStrs + _iStrs;
+        put _iStrs = _iStrs + 1;
+
+        push _pSub; 
+        sub String::StrLen; 
+        pull _size;
+
+        push _pSub;
+        push _pOut + _iOut;
+        push _size;
+        put _iOut = _iOut + _size; "move _pOut over to free memory
+        sub String::MemCpy;
+
+        sub Stack::Dup; pull _len;
+    jump String::Join::Copy ~ _iStrs < _len;
+    
+    pull __;
+
+    push _pOut;
+    sub Stack::Swap;
+    return;
+
+
+
+
+
+
+" --- VVV DANGER VVV ---
+
+"takes a list of char from the stack and converts it into an int
+"order of char can be changed be setting config to a 1
+lab String::StackChar2Int;
+    sub Stack::Swap;
+    pull _Config;
+    put _Buffer = 0;
+    put _IndexInit = 0;
+
+    "init _Index to a value base on config
+    sub String::StackChar2Int::SetIndexInit1     ~ _Config == 0;
+    sub String::StackChar2Int::SetIndexInit10000 ~ _Config == 1;
+    put _Index = _IndexInit;
+
+    lab String::StackChar2Int::AccLoop;
+    sub Stack::Swap;
+    pull _Data; 
+    "check for terminator
+    jump String::StackChar2Int::Exit ~ _Data == 0;
+
+    push _Data - 48; 
+    push _Index; 
+    sub Math::Mul; 
+    pull _Data; 
+    put _Buffer = _Buffer + _Data;
+
+    push _Index;
+    push 10;
+    sub Math::Mul ~ _Config == 0;
+    sub Math::Div ~ _Config == 1;
+    pull _Index;
+
+    jump String::StackChar2Int::AccLoop ~ _Index != _IndexInit;
+    lab String::StackChar2Int::Exit;
+
+    push _Buffer;
+    sub Stack::Swap;
+    return;
+
+    lab String::StackChar2Int::SetIndexInit1;
+        put _IndexInit = 1;
+        return;
+    lab String::StackChar2Int::SetIndexInit10000;
+        put _IndexInit = 10000;
+        return;
+
+
+
+
+lab String::Skip;
+

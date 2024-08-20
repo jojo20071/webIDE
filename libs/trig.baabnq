@@ -1,0 +1,149 @@
+use 'libs/stack.baabnq';
+use 'libs/float.baabnq';
+
+jump Trig::Skip;
+
+
+"(A::Fixed, B::Fixed) => (Prod::Fixed)
+lab Trig::LocalF2Mul;
+    sub Stack::Swap;
+    pull _b;
+    sub Stack::Swap;
+    pull _a;
+    
+    put _prod = 0;
+    put _i = 0;
+    lab Trig::LocalF2Mul::Loop;
+        jump Trig::LocalF2Mul::Skip ~ _a & (1 << 15) == 0;
+        asm '
+            lDA (_b);
+            shg;
+            shg;
+            lDR (_prod);
+            add;
+            sAD (_prod);';
+        lab Trig::LocalF2Mul::Skip;
+    
+        asm '
+            lDA (_b); shs; sAD (_b);
+            lDA (_a); shg; sAD (_a);';
+    
+        put _i = _i + 1;
+    jump Trig::LocalF2Mul::Loop ~ _i < 15;
+
+    push _prod;
+    sub Stack::Swap;
+    return;
+
+"(X::Fixed) => (X::Fixed)
+"twos comp negation
+lab Trig::LocalFNeg;
+    sub Stack::Swap;
+    asm '
+        pla;
+        not;
+        set 1;
+        add;
+        pha;
+    ';
+    sub Stack::Swap;
+    return;
+
+
+"(X::Fixed) => (Sin::Fixed)
+lab Trig::FSin;
+    sub Stack::Swap;
+
+    sub Stack::Dup;
+    pull __;
+    sub Trig::LocalFNeg ~ __ & (1 << 15) != 0;
+    pull _a;
+
+    push _a;
+    sub Trig::LocalFNeg;
+    pull _b;
+    
+    push _b & ((0 - 1) >> 1);
+    push _a;
+    
+    sub Trig::LocalF2Mul;
+
+    sub Stack::Swap;
+    return;
+    
+    
+lab Trig::LocalAddExpo;
+    sub Stack::Swap;
+    pull _d;
+    sub Stack::Swap;
+    pull _x;
+
+    push _tempPtr;
+    push _x;
+    sub Floats::GetExponent;
+    pull __; push __ + _d;
+    put _x -> _tempPtr;
+    sub Floats::SetExponent;
+    put _x <- _tempPtr;
+    push _x;
+    
+    sub Stack::Swap;
+    return;
+
+lab Trig::Zero;
+    push _Floats::Zero;
+    sub Stack::Swap;
+    return;
+    
+    
+"(X::Float16) => (Sin::Float16)
+lab Trig::Sin;
+    sub Stack::Swap;
+
+    "check null
+    pull _x;
+    jump Trig::Zero ~ _x == _Floats::Zero;
+    push _x;
+    
+    "add 15 to exp for fixed-point digit extraction
+    push 15;
+    sub Trig::LocalAddExpo;
+    
+    sub Floats::Fp2Value;
+    
+    "save for sign extraction
+    sub Stack::Dup;
+    
+    sub Trig::FSin;
+    sub Floats::Value2Fp;
+
+    pull _x;
+    pull __;
+    jump Trig::Zero ~ _x == _Floats::Zero;
+    push __;
+    push _x;
+
+    "sub 15 from exp for fixed-point digit integration
+    push 0 - 15;
+    sub Trig::LocalAddExpo;
+    
+    "swap restore sign and res
+    "__ contains fixed-point number, where msb has place value 1
+    "output sign needs to be set if input msb is set
+    sub Stack::Swap;
+    pull __;
+
+
+    pull _x;
+    push _x | (_SIGN_MASK & __);
+
+    sub Stack::Swap;
+    return;
+
+
+
+
+
+
+lab Trig::Skip;
+

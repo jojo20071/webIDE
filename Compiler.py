@@ -1,16 +1,11 @@
-
+import argparse
+from dataclasses import dataclass
+import sys
 
 
 class cUtils:
-    xIntLimit = int("1" * 16, 2)
+    xIntLimit = (2 ** 16) - 1
     xMemLimit = xIntLimit // 2
-
-    class cVariable:
-        def __init__(self, xValue):
-            self.xValue = xValue
-    
-        def __int__(self):
-            return int(self.xValue)
     
     @staticmethod
     def Error(xMessage):
@@ -30,22 +25,10 @@ class cUtils:
             yield x
             x += 1
 
+    @staticmethod    
+    def UnescapeStr(xStr):
+        return xStr.encode('utf-8').decode('unicode_escape')
 
-
-
-class cTokenTypes:
-    def __init__(self):
-        xGen = cUtils.Gen()
-        
-        self.STRING         = next(xGen)
-        self.EXPR           = next(xGen)
-        self.COMMAND        = next(xGen)
-        self.OPERATOR       = next(xGen)
-        self.JUMPCONDOP     = next(xGen)
-        self.ASSIGNMENT     = next(xGen)
-        self.CONDOP         = next(xGen)
-        self.NAME           = next(xGen)
-        self.ENDOFSTATEMENT = next(xGen)
 
 class cObjTypes:
     def __init__(self):
@@ -80,7 +63,6 @@ class cCommandTypes:
         self.ASM            = next(xGen)
         self.FREE           = next(xGen)
 
-tokenTypes   = cTokenTypes()
 objTypes     = cObjTypes()
 commandTypes = cCommandTypes()
 
@@ -227,12 +209,15 @@ class cCodeGen:
         else:
             cUtils.LineError(self.xLineNumber, "Unable to map variable with name '{xName}'".format(xName = xIndex))
 
+    def FormatLab(self, xIndex):
+        return f"temp{xIndex}"
+
     def GetTempLab(self):
-        self.xTempLabIndex = 0
-        while f"Temp{self.xTempLabIndex}".format() in self.xLabels:
+        xTempLabel = None
+        while xTempLabel in self.xLabels + [None]:
+            xTempLabel = self.FormatLab(self.xTempLabIndex)
             self.xTempLabIndex += 1
         
-        xTempLabel = f"Temp{self.xTempLabIndex}".format() 
         self.xLabels.append(xTempLabel)
         return xTempLabel
     
@@ -496,9 +481,11 @@ class cCodeGen:
 
                 #convert in into ascii and add a NULL terminator
                 #the 0 is a placeholder for the size of the chunk
-                xRawStringData = [0]
-                for xLineIterator in xAllocString.split("\\n"):
-                    xRawStringData += [ord(x) for x in xLineIterator] + [10]
+                xRawStringData = [0] + [ord(x) for x in cUtils.UnescapeStr(xAllocString)] + [0]
+
+                #xRawStringData = [0]
+                #for xLineIterator in xAllocString.split("\\n"):
+                #    xRawStringData += [ord(x) for x in xLineIterator] + [10]
 
                 #override the last newline with a NULL terminator
                 #(yes, terminators are generally bad, but in this case it's fine because it's known to compile time that the terminator
@@ -662,11 +649,22 @@ class cCodeGen:
                 if xAllocSizeInt == 0:
                     cUtils.LineError(self.xLineNumber, f"Alloc Size must not be 0")
                     
+                xTempAddr = self.TempAlloc(1)[0]
+                
+                xAllocSizeFull = xAllocSizeInt + 1
 
-                xBasePointer = self.StaticNAlloc(xAllocSizeInt)
+                #plus one for length information
+                xBasePointer = self.StaticNAlloc(xAllocSizeFull)
                 self.xOutputCode += cCodeGen.cCommand.List2Self([
-                    "clr", None,
+                    #write length information
                     "set", xBasePointer,
+                    "sRD", xTempAddr,                    
+                    "set", xAllocSizeFull,
+                    "sRP", xTempAddr,
+                
+                    #write pointer
+                    "clr", None,
+                    "set", xBasePointer + 1,
                     "add", None,
                     "pha", None,
                     
@@ -684,15 +682,11 @@ class cCodeGen:
                 if xAllocStringObj.xType != objTypes.STRING:
                     cUtils.LineError(self.xLineNumber, "Alloc Object must be String")
 
-                xRawStringData = [0]
-                for xLineIterator in xAllocString.split("\\n"):
-                    xRawStringData += [ord(x) for x in xLineIterator] + [10]
-
+                xRawStringData = [ord(x) for x in cUtils.UnescapeStr(xAllocString)]
+                xFullData = [0] + xRawStringData + [0]
                 
-                xAllocSize = len(xRawStringData)
-                
-                xRawStringData[-1] = 0
-                xRawStringData[0] = xAllocSize #override placeholder
+                xAllocSize = len(xFullData)                
+                xFullData[0] = xAllocSize #override placeholder
                 
                 
                 
@@ -712,7 +706,7 @@ class cCodeGen:
                                         
                     ]) + xBasePointerObj.Set(self)
                     
-                for xCharIter in xRawStringData:
+                for xCharIter in xFullData:
                     self.xOutputCode += cCodeGen.cCommand.List2Self([
                         "set", xCharIter,
                         "jmS", "_WriteChar",
@@ -1224,9 +1218,8 @@ class cParser:
                     
                     #try to load path as file
                     try:
-                        xImportFileHandle = open(xImportPath)
-                        xImportFile = xImportFileHandle.read()
-                        xImportFileHandle.close()
+                        with open(xImportPath, "r", encoding = 'utf-8') as f:
+                            xImportFile = f.read()
                                         
                     except FileNotFoundError:
                         cUtils.LineError(xTokenBuffer[-3].xLine + 1, "Unable to load library file with path '{xPath}'".format(xPath = xImportPath))
@@ -1262,13 +1255,33 @@ class cParser:
         return xCommandBuffer
 
 
+
+class cTokenTypes:
+    def __init__(self):
+        xGen = cUtils.Gen()
+        
+        self.STRING         = next(xGen)
+        self.EXPR           = next(xGen)
+        self.COMMAND        = next(xGen)
+        self.OPERATOR       = next(xGen)
+        self.JUMPCONDOP     = next(xGen)
+        self.ASSIGNMENT     = next(xGen)
+        self.CONDOP         = next(xGen)
+        self.NAME           = next(xGen)
+        self.ENDOFSTATEMENT = next(xGen)
+
+tokenTypes   = cTokenTypes()
+
+
+
 class cTokenizer:
+    @dataclass
     class cToken:
-        def __init__(self, xTokenContent, xTokenType, xLine, xLineContent):
-            self.xTokenContent = xTokenContent
-            self.xTokenType    = xTokenType
-            self.xLine         = xLine
-            self.xLineContent  = xLineContent
+        xTokenContent : str
+        xTokenType    : int
+        xLine         : int
+        xLineContent  : str
+        #self.xIndex        
                         
         def __str__(self):
             return str(self.xLine + 1) + "\t" + "{xMessage: <25}".format(xMessage = str(self.xTokenContent)) + str(self.xTokenType)
@@ -1301,7 +1314,7 @@ class cTokenizer:
         for xLineIndex in range(len(xLines)):
             xLineIter = xLines[xLineIndex]
             if xPrintLine: 
-                print("{xLineIndex: <10} {xLineIter}".format(xLineIter = xLineIter, xLineIndex = xLineIndex + 1))
+                print(f"{xLineIndex+1: <10} {xLineIter}")
             
             for xSplitLineIter in xLineIter.split(" "):
                 #check for comment and keep consuming terminal while on the same line
@@ -1413,43 +1426,37 @@ class cCompiler:
         xCommandList    = self.xParser.Parse(xTokenList)
         xOutputAssembly = self.xCodeGen.Generate(xCommandList)
         
+        xUsed  = self.xCodeGen.xMemUsedIndex
+        xTotal = cUtils.xMemLimit
+        
+        print(f"\nStatically allocated Memory: {round(xUsed / xTotal * 100, 5)}% ({xTotal} / {xUsed})")
+        
         return xOutputAssembly, self.xCodeGen.xVarMapper
 
 
 if __name__ == '__main__':
-    import sys
-    xArgs = sys.argv
-    xArgBuffer = xArgs
-    xMoreInfo = "--MoreInfo" in xArgs
-    
-    xIoPaths = {}
-    
-    while len(xArgBuffer) > 1:
-        xArgIter = xArgBuffer.pop(0)
-        
-        if xArgIter == "--input":
-            xIoPaths["input"] = xArgBuffer.pop(0)
 
-        elif xArgIter == "--output":
-            xIoPaths["output"] = xArgBuffer.pop(0)
-        
-    del xArgBuffer
-    if sorted(xIoPaths) != ["input", "output"]:
-        cUtils.Error("Invaild call arguments")
+    xParser = argparse.ArgumentParser(
+        prog='Compiler',
+        description='Baabnq Compiler',
+        epilog='Good luck :3')
     
-    xInputFile = open(xIoPaths["input"])
-    xRawInput = xInputFile.read()
-    xInputFile.close()
+    xParser.add_argument('-i', '--input', dest="inPath", required=True)
+    xParser.add_argument('-o', '--output', dest="outPath", default="build.s1")
+    xArgs = xParser.parse_args()
+    
+    with open(xArgs.inPath, "r", encoding = 'utf-8') as xInFile:
+        xIn = xInFile.read()
     
     xCompiler = cCompiler()
-    xAssemblerOutput, xVarMapper = xCompiler.Compile(xRawInput)
-    xFormattedOutput = f'{xAssemblerOutput}\n\n\n\n\n "Compiled from source: {str(xIoPaths["input"])}'
+    xAsm, xVarMapper = xCompiler.Compile(xIn)
+    xOut = f'{xAsm}\n\n\n\n\n "Compiled from source: {xArgs.inPath}'
 
-    #add more info if requested
-    xFinalOutput = f'"{str(xVarMapper)}\n\n\n{xFormattedOutput}' if xMoreInfo else xFormattedOutput
+    with open(xArgs.outPath, "w") as xOutFile:
+        xOutFile.write(xOut)
     
-    xOutputFile = open(xIoPaths["output"], "w")
-    xOutputFile.write(xFinalOutput)
-    xOutputFile.close()
+    print("\nCompilation was successful")
     
-    print("\n\n\n\n\nCompilation was successful")
+    
+    
+    

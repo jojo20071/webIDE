@@ -1,0 +1,171 @@
+use 'libs/stack.baabnq';
+use 'libs/chunk.baabnq';
+
+"init systemvars
+sub Rand::Init;
+
+jump Rand::Skip;
+
+
+
+
+"initializes internal state of prngs
+lab Rand::Init;
+    "generic state
+    put _Rand::X = 1;
+    
+    "xor64
+    static 4 _Rand::Xor64::State;
+    
+    put 1 -> _Rand::Xor64::State + 0;
+    put 1 -> _Rand::Xor64::State + 1;
+    put 1 -> _Rand::Xor64::State + 2;
+    put 1 -> _Rand::Xor64::State + 3;
+
+    "Isaac state
+    static 256 _Rand::Isaac::state;
+    put _Rand::Isaac::a = 0;
+    put _Rand::Isaac::b = 0;
+    put _Rand::Isaac::c = 0;
+    put _Rand::Isaac::i = 0;
+    
+    put _i = 0;
+    lab Rand::Init::IsaacStateFillLoop;
+        put 0 -> _Rand::Isaac::state + _i;
+        put _i = _i + 1;
+    jump Rand::Init::IsaacStateFillLoop ~ _i < 256;
+        
+    return;
+    
+    
+    
+"default generator
+" => (X::Int)
+lab Rand::Rand;
+lab Rand::Xorshift;
+
+    sub Rand::Init ~ _Rand::X == 0;
+
+    put _Rand::X = _Rand::X ^ (_Rand::X << 7);
+    put _Rand::X = _Rand::X ^ (_Rand::X >> 9);
+    put _Rand::X = _Rand::X ^ (_Rand::X << 8);
+
+    push _Rand::X;
+    sub Stack::Swap;
+    return;
+    
+"linear congruential generator
+" => (X::Int)
+lab Rand::LCG;
+lab Rand::Fast;
+    "x = 2053 * x + 13849
+    asm '
+        lDA (_Rand::X);
+        shg;
+        shg;
+        sAD -t;
+        shg; shg; shg; shg;
+        shg; shg; shg; shg;
+        shg;
+        lDR -t;
+        add;
+        lDR (_Rand::X);
+        add;
+        set 13849;
+        add;
+        sAD (_Rand::X);
+    ';
+                       
+    push _Rand::X;
+    sub Stack::Swap;
+    return;
+    
+    
+" "home-made" (lol, i just threw together a two xorshift implementation to make it 16-bit compatibile)
+"https://en.wikipedia.org/wiki/Xorshift
+"http://www.retroprogramming.com/2017/07/xorshift-pseudorandom-numbers-in-z80.html
+
+" => (X::Int)
+lab Rand::Xor64;
+lab Rand::Xorshift64;
+lab Rand::Good; "passes dieharder while being relatively simple
+
+    put _t <- _Rand::Xor64::State + 3;
+    put _s <- _Rand::Xor64::State + 0;
+    
+    put __ <- _Rand::Xor64::State + 2; put __ -> _Rand::Xor64::State + 3;
+    put __ <- _Rand::Xor64::State + 1; put __ -> _Rand::Xor64::State + 2;
+    put __ <- _Rand::Xor64::State + 0; put __ -> _Rand::Xor64::State + 1;
+
+    "identical to Rand::Rand
+    put _t = _t ^ (_t << 7);
+    put _t = _t ^ (_t >> 9);
+    put _t = _t ^ (_t << 8);
+    
+    put __ = _t ^ _s ^ (_s >> 3);
+    put __ -> _Rand::Xor64::State + 0;
+    
+    push __;
+    sub Stack::Swap;
+    return;
+
+
+
+
+
+"https://burtleburtle.net/bob/rand/isaacafa.html
+"https://en.wikipedia.org/wiki/ISAAC_%28cipher%29
+
+"this implementation slightly differs from the original, in that it yields one standart 16-bit integer
+"per call, instead of generating the full 256 word state. is does this by globally keeping track of the index
+"into the state, which would normally be kept locally by the for-loop.  
+
+"this implementation is tested on the dieharder suite, where it passes the first 3 tests
+"(it took me 1,5 hours to generate 1gb of data, because the S1AsmVM is slow as all hell)
+
+" => (X::Int)
+lab Rand::ISAAC256;
+lab Rand::Isaac;
+lab Rand::Crypto;
+    put _mm = _Rand::Isaac::state;    
+
+    jump Rand::Isaac::SkipYieldReset ~ _Rand::Isaac::i < 256;
+        put _Rand::Isaac::i = 0;
+        put _Rand::Isaac::c = _Rand::Isaac::c + 1;
+        put _Rand::Isaac::b = _Rand::Isaac::b + _Rand::Isaac::c;    
+    lab Rand::Isaac::SkipYieldReset;
+    
+    put _x <- _mm + _Rand::Isaac::i;
+
+    put _mod = _Rand::Isaac::i & 3;
+    jump Rand::Isaac::Case0 ~ _mod == 0;
+    jump Rand::Isaac::Case1 ~ _mod == 1;
+    jump Rand::Isaac::Case2 ~ _mod == 2;
+    jump Rand::Isaac::Case3 ~ _mod == 3;
+    
+    lab  Rand::Isaac::Case0; put _Rand::Isaac::a = _Rand::Isaac::a ^ (_Rand::Isaac::a << 13); jump Rand::Isaac::Break;
+    lab  Rand::Isaac::Case1; put _Rand::Isaac::a = _Rand::Isaac::a ^ (_Rand::Isaac::a >> 6) ; jump Rand::Isaac::Break;
+    lab  Rand::Isaac::Case2; put _Rand::Isaac::a = _Rand::Isaac::a ^ (_Rand::Isaac::a << 2) ; jump Rand::Isaac::Break;
+    lab  Rand::Isaac::Case3; put _Rand::Isaac::a = _Rand::Isaac::a ^ (_Rand::Isaac::a >> 16); jump Rand::Isaac::Break;
+
+    lab Rand::Isaac::Break;
+    
+    
+    put __ <- _mm + ((_Rand::Isaac::i + 128) & 255);
+    put _Rand::Isaac::a = _Rand::Isaac::a + __;
+    
+    put _y <- _mm + ((_x >> 2) & 255);
+    put _y = _y + _Rand::Isaac::a + _Rand::Isaac::b;
+    put _y -> _mm + _Rand::Isaac::i;
+    
+    
+    put __ <- _mm + ((_y >> 10) & 255); put _Rand::Isaac::b = __ + _x;
+        
+    put _Rand::Isaac::i = _Rand::Isaac::i + 1;
+
+    push _Rand::Isaac::b;
+    sub Stack::Swap;
+    return;
+    
+
+lab Rand::Skip;

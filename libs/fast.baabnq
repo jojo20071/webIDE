@@ -1,0 +1,111 @@
+use 'libs/stack.baabnq';
+
+jump Fast::Skip;
+
+
+
+"(X::Int) => (10X::Int)
+"mul10 :: Int -> Int
+"mul10 = (*10)
+lab Fast::Mul10;
+    asm '
+    jmS Stack::Swap;
+    pla;
+    shg;
+    sAD -t;
+    lDR -t;
+    shg;
+    shg;
+    add;
+    pha;
+    jmS Stack::Swap;
+    ';
+    return;  
+    
+
+
+
+
+
+"based on: Hacker's Delight, Second Edition, Chapter 10, INTEGER DIVISION BY CONSTANTS
+
+"(X::Int) => (Q::Int, R::Int)
+"divmod :: Int -> (Int, Int)
+"divmod x = (div x 10, mod x 10)
+lab Fast::DivMod10;
+    asm '
+    jmS Stack::Swap;
+    pla;
+    sAD -n;
+
+    "put _q = (_n >> 1) + (_n >> 2);
+    shs;
+    sAD -tmp;
+    lDR -tmp;
+    shs;
+    add;
+    sAD -q;
+
+    "put _q = _q + (_q >> 4);
+    shs; shs; shs; shs;
+    lDR -q;
+    add;
+    sAD -q;
+
+    "put _q = _q + (_q >> 8);
+    shs; shs; shs; shs;
+    shs; shs; shs; shs;
+    lDR -q;
+    add;
+
+    "put _q = _q >> 3;
+    shs; shs; shs;
+    sAD -q;
+
+    "r = n - q*10
+    "put _r = _n - (_q << 3) - (_q << 1);
+    shg;
+    sAD -q1;
+    shg;
+    shg;
+    sAD -q3;
+
+    lDA -n;
+    lDR -q3;
+    sub;
+    lDR -q1;
+    sub;
+
+    "q = q + (r > 9)
+    "put _q =  _q + ((_r + 6) >> 4);
+    set 6;
+    add;
+    sAD -r;
+    shs; shs; shs; shs;
+    
+    lDR -q;
+    add;
+    sAD -q;
+
+    "remainder
+    lDA -r;
+    set 15;
+    and;
+    set 6;
+    jmL Fast::DivMod10::Skip;
+    sub;
+    lab Fast::DivMod10::Skip;
+    pha;
+    jmS Stack::Swap;
+
+    "quotient
+    lDA -q;
+    pha;
+    jmS Stack::Swap;
+    ';
+
+    return;
+    
+    
+    
+lab Fast::Skip;

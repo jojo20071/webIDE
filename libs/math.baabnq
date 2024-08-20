@@ -1,0 +1,392 @@
+use 'libs/stack.baabnq';
+
+
+jump Math::Skip;
+
+"forward declaration
+put _i = 0;
+
+"(Value::Int) => (Value::Int + 1)
+lab Math::Inc;
+    asm '
+    jmS Stack::Swap;    
+    pla;
+    set 1;
+    add;
+    pha;
+    jmS Stack::Swap;    
+    ';
+    return;
+
+"(Value::Int) => (Value::Int - 1)
+lab Math::Dec;
+    asm '
+    jmS Stack::Swap;    
+    pla;
+    set 1;
+    sub;
+    pha;
+    jmS Stack::Swap;    
+    ';
+    return;
+
+
+"(A::Int, B::Int) => (Min::Int)
+"Min::Int = A::Int < B::Int ? A::Int : B::Int
+lab Math::Min;
+    pull _ReturnAddr; "nasty, but best solution in this case
+    pull _1;
+    pull _2;
+    push _ReturnAddr; "save
+    push _2;
+    push _1;
+    
+    sub Stack::Swap ~ _1 < _2;
+      
+    pull __; "pull smaller value
+    sub Stack::Swap;
+    return;
+
+"(A::Int, B::Int) => (Max::Int)
+"Max::Int = A::Int > B::Int ? A::Int : B::Int
+lab Math::Max;
+    pull _ReturnAddr;
+    pull _1;
+    pull _2;
+    push _ReturnAddr;
+    push _2;
+    push _1;
+
+    sub Stack::Swap ~ _1 > _2;
+       
+    pull __;
+    sub Stack::Swap;
+    return;
+
+"(Value::Int, Offset::Int) => (Value::Int)
+"Value::Int =<< Offset::Int
+lab Math::Shg;
+    sub Stack::Swap;
+    pull _2;
+    sub Stack::Swap;
+    pull _1;
+
+    push _1 << _2;
+    sub Stack::Swap;
+    return;    
+
+"(Value::Int, Offset::Int) => (Value::Int)
+"Value::Int =>> Offset::Int
+lab Math::Shs;
+    sub Stack::Swap;
+    pull _2;
+    sub Stack::Swap;
+    pull _1;
+
+    push _1 >> _2;
+    sub Stack::Swap;
+    return;    
+    
+
+"(A::Int, B::Int) => (Sum::Int)
+"Sum::Int = A::Int + B::Int
+lab Math::Add;
+    asm '
+    jmS Stack::Swap;    
+    pla;
+    sAD -Temp;
+    lDR -Temp;
+
+    jmS Stack::Swap;    
+    pla;
+    add;
+    pha;
+    
+    jmS Stack::Swap;
+    ';
+    return;
+
+"(A::Int, B::Int) => (Diff::Int)
+"Diff::Int = A::Int - B::Int
+lab Math::Sub;
+    asm '
+    jmS Stack::Swap;    
+    pla;
+    sAD -Temp;
+    lDR -Temp;
+
+    jmS Stack::Swap;    
+    pla;
+    sub;
+    pha;
+    
+    jmS Stack::Swap;
+    ';
+    return;
+
+
+
+"(A::Int, B::Int) => (Prod::Int)
+"Prod::Int = A::Int * B::Int
+lab Math::MulSafe;
+    put _arg1 = 0;
+    put _arg2 = 0;
+    put _output = 0;
+
+    sub Stack::Swap;
+    pull _arg1;
+    sub Stack::Swap;
+    pull _arg2;
+
+    jump Math::MulSafe::Exit ~ _arg1 == 0;
+    jump Math::MulSafe::Exit ~ _arg2 == 0;
+    
+    lab Math::MulSafe::Loop; 
+       
+        jump Math::MulSafe::SkipAdd ~ _arg1 & 1 == 0;
+            put _output = _output + _arg2;
+        lab Math::MulSafe::SkipAdd;
+
+        put _arg2 = _arg2 << 1;
+        put _arg1 = _arg1 >> 1;
+
+        jump Math::MulSafe::Loop ~ _arg1 != 0;
+    lab Math::MulSafe::Exit;
+
+    push _output;
+    sub Stack::Swap;
+return;
+
+
+"(A::Int, B::Int) => (Prod::Int)
+"Prod::Int = A::Int * B::Int
+lab Math::Mul;
+    asm '
+    clr;
+    sAD -output;
+
+    jmS Stack::Swap;
+    pla;
+    sAD -arg1;
+    jmS Stack::Swap;    
+    pla;
+    sAD -arg2;
+    
+    jm0 Math::Mul::Done;
+    lDA -arg1;
+    jm0 Math::Mul::Done;
+                
+    lab Math::Mul::Loop;
+
+    lDA -arg1;
+    set 1;
+    and;
+
+    jm0 Math::Mul::Skip;
+    lDA -output;
+    lDR -arg2;
+    add;
+    sAD -output;
+    lab Math::Mul::Skip;
+    
+    lDA -arg2;
+    shg;
+    sAD -arg2;
+    lDA -arg1;
+    shs;
+    sAD -arg1;
+    
+    jm0 Math::Mul::Done;
+    got Math::Mul::Loop;
+    lab Math::Mul::Done;
+             
+    lDA -output;    
+    pha;
+    jmS Stack::Swap;    
+    ';
+    return;
+
+
+"(A::Int, B::Int) => (Quo::Int)
+"Quo::Int = A::Int / B::Int
+"translated from https://en.wikipedia.org/wiki/Division_algorithm#Long_division
+lab Math::Div; 
+    sub Stack::Swap;
+    pull _d;
+    sub Stack::Swap;    
+    pull _n;
+    
+    push _i;
+    
+    put _q = 0;
+    put _r = 0;
+    put _i = 15;
+    
+    lab Math::Div::Loop;
+        put _r = (_r << 1) | ((_n >> _i) & 1);
+        jump Math::Div::SkipSub ~ _d > _r;
+            put _r = _r - _d;
+            put _q = _q | (1 << _i);
+        lab Math::Div::SkipSub;
+        put _i = _i - 1;
+    jump Math::Div::Loop ~ _i != (0 - 1);
+
+    pull _i;
+
+    push _q;
+    sub Stack::Swap;
+    return;
+
+"(A::Int, B::Int) => (Rem::Int)
+"Rem::Int = A::Int % B::Int
+lab Math::Mod;
+    sub Stack::Swap;    
+    pull _d;
+    sub Stack::Swap;    
+    pull _n;
+    
+    push _i;
+
+    put _q = 0;
+    put _r = 0;
+    put _i = 15;
+    
+    lab Math::Mod::Loop;
+        put _r = (_r << 1) | ((_n >> _i) & 1);
+        jump Math::Mod::SkipSub ~ _d > _r;
+            put _r = _r - _d;
+            put _q = _q | (1 << _i);
+        lab Math::Mod::SkipSub;
+        put _i = _i - 1;
+    jump Math::Mod::Loop ~ _i != (0 - 1);
+    
+    pull _i;
+
+    push _r;
+    sub Stack::Swap;
+    return;
+
+
+
+"(V::Int) => (X::Int)
+"X::Int^2 = V::Int
+"dynamic binary search
+lab Math::Sqrt;
+    sub Stack::Swap;
+    pull _v;
+    
+    push _i;
+    
+    put _x  = 0;
+    "*dynamic programming* (wow, that's cool)
+    put _x2 = 0; "x^2
+    put _2xb = 0; "2*x*b
+    
+    "probe bit
+    put _b  = 1 << 7;
+    put _b2 = 1 << 14;
+    
+    put _i = 8;
+    lab Math::Sqrt::Loop;
+        
+        put _2xb = (_x << _i);
+        
+        put _g  = _x  +        _b;
+        put _g2 = _x2 + _2xb + _b2;
+    
+        jump Math::Sqrt::Skip ~ _g2 > _v;
+            put _x  = _g;
+            put _x2 = _g2;
+        lab Math::Sqrt::Skip;
+    
+        asm 'lDA (_b);  shs;      sAD (_b)';                
+        asm 'lDA (_b2); shs; shs; sAD (_b2)';
+
+        put _i = _i - 1;
+    jump Math::Sqrt::Loop ~ _i > 0;
+    
+    pull _i;
+
+    push _x;
+    sub Stack::Swap;
+    return;
+
+
+"(Base::Int, Exp::Int) => (Val::Int)
+"Base::Int ^ Exp::Int = Val::Int
+lab Math::Pow;
+    sub Stack::Swap;
+    pull _e;
+    sub Stack::Swap;
+    pull _b;
+        
+    put _x = 1;
+    lab Math::Pow::Loop;
+        jump Math::Pow::Done ~ _e == 0;
+        
+        jump Math::Pow::Skip ~ _e & 1 == 0;
+            push _b;
+            push _x;
+            sub Math::Mul;
+            pull _x;
+        lab Math::Pow::Skip;
+        
+        push _b;
+        push _b;
+        sub Math::Mul;
+        pull _b;
+
+        put _e = _e >> 1;
+        jump Math::Pow::Loop;
+    lab Math::Pow::Done;
+    
+    push _x;
+    sub Stack::Swap;
+    return;
+
+"(V::Int) => (X::Int)
+"X::Int^3 = V::Int
+lab Math::Cbrt;
+    sub Stack::Swap;
+    pull _v;
+    
+    push _i;
+    
+    put _x  = 0;
+    put _x2 = 0;
+    put _x3 = 0;
+    
+    put _b  = 1 << 5;
+    put _b2 = 1 << 10;
+    put _b3 = 1 << 15;
+    
+    put _i = 5;
+    lab Math::Cbrt::Loop;
+        
+        put _g       = _x  + _b;
+        put _g2      = _x2 + _b2   + (_x << (_i + 1));
+        put _a2bb2a  = (_x2 << _i) + (_x << (_i + _i));
+        put _a2bb2a3 = _a2bb2a + _a2bb2a + _a2bb2a;
+        put _g3      = _x3 + _b3 + _a2bb2a3;
+        
+        jump Math::Cbrt::Skip ~ _g3 > _v;
+            put _x  = _g;
+            put _x2 = _g2;
+            put _x3 = _g3;        
+        lab Math::Cbrt::Skip;
+        
+        put _b  = _b  >> 1;
+        put _b2 = _b2 >> 2;
+        put _b3 = _b3 >> 3;
+        
+        put _i = _i - 1;
+    jump Math::Cbrt::Loop ~ _b > 0;
+    
+    pull _i;
+    
+    push _x;
+    sub Stack::Swap;
+    return;
+
+
+lab Math::Skip;
