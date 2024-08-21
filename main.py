@@ -25,7 +25,11 @@ def run():
     if flask.request.method == 'GET':
         return flask.redirect('/')
     
-    xEditorContent = flask.request.get_json()['source']
+    xRequest = flask.request.get_json()
+    if 'source' not in xRequest.keys():
+        return "Error: Malformed Request"
+
+    xEditorContent = xRequest['source']
     print(xEditorContent)
 
     with open("source.baabnq", "w") as xFile:

@@ -11,7 +11,7 @@ document.addEventListener("keypress", (e) => {
 
 function run() {
     sendPost({
-        'source': document.getElementById("editor").value
+        'source': document.getElementById("editor").innerText
     }, "/run");
 }
 

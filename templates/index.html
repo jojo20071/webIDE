@@ -25,9 +25,13 @@
             }
             
                      
-            .centre {
-                display: table; margin: auto;
-            
+            .center {
+                display: table; margin: auto;            
+            }
+
+            .heading {
+                text-align: center;
+                margin-bottom: 30px
             }
          
             input {
@@ -49,16 +53,30 @@
                 width:  100px;
                 font-size: 100%;
             }
+            
+            .embed {
+                width:  600px;
+                height: 300px;
+                float: left;
+                border: 1px solid #333;
+                border-radius: 10px;
+                margin: 5px;
+                padding: 5px;
+            }
          
         </style>
     </header>
     <body>
-        <text style="font-size: 50px; margin-bottom: 20px" class="centre">Baabnq Web IDE</text>
-        <div class = "centre">
-            <textarea id = "editor"></textarea>
-            <textarea readonly id = "output"></textarea>
+        <div class="center">
+            <h1 class="heading">Baabnq Web IDE</h1>
+            
+            <div>
+                <div class="embed baabnq-source"    id="editor" contenteditable="true">A</div>
+                <div class="embed"                  id="output" readonly>A</div>
+            </div>
+
             <br>
-            <input class = "biggreenbutton" id = "runButton" type = "button" value = "Run"/>
+            <input class="biggreenbutton" id="runButton" type="button" value="Run"/>
             <text>Or press Ctrl + Enter to run</text>
         </div>
         
@@ -66,5 +84,6 @@
 
 
         <script src="{{ url_for('static', filename='main.js') }}"></script>
+        <script src="{{ url_for('static', filename='highlight.js') }}"></script>
     </body>
 <html>
