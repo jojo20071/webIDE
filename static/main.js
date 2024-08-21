@@ -2,8 +2,7 @@
 
 
 
-document.getElementById("runButton").onclick = run;
-
+document.getElementById("runButton").addEventListener("click", run);
 document.addEventListener("keypress", (e) => {
     if (e.ctrlKey && e.key == "Enter") run();
     
@@ -12,7 +11,7 @@ document.addEventListener("keypress", (e) => {
 
 function run() {
     sendPost({
-        'editor': document.getElementById("editor").value
+        'source': document.getElementById("editor").value
     }, "/run");
 }
 

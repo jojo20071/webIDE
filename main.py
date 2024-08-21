@@ -11,9 +11,6 @@ import vm
 def error(x):
     raise Exception(x)
 
-
-
-
 app = flask.Flask(__name__)
 Compiler.cUtils.Error = error
 
@@ -32,7 +29,7 @@ def run():
     if flask.request.method == 'GET':
         return flask.redirect('/')
     
-    xEditorContent = flask.request.get_json()['editor']
+    xEditorContent = flask.request.get_json()['source']
     print(xEditorContent)
 
     try:
@@ -43,16 +40,29 @@ def run():
         return str(E)
 
 
+
     try:
         xProg = vm.cProg(xAsm)
+
+        #reset vm state
+        vm.cEnv.xProgIndex = 0
+        vm.cEnv.xRun = True
+        vm.cEnv.Acc(0)
+        vm.cEnv.Reg(0)
+        vm.cEnv.xHeapAlloc = []
+        (vm.cEnv.xMem[i](0) for i in range(vm.xIntLimit))
+
         
-        xTempStd = sys.stdout = xStdOutCap = io.StringIO()
+        xTempStd = sys.stdout
+        xStdOutCap = io.StringIO()
+        sys.stdout = xStdOutCap
         
         xRunner = threading.Thread(target = xProg.Run)
         xRunner.start()
         xRunner.join(timeout = 0.1)
-                    
+                        
         sys.stdout = xTempStd
+
         if not xRunner.is_alive():
             xOutput = xStdOutCap.getvalue()
             print(xOutput)
