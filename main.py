@@ -33,7 +33,7 @@ def run():
 
     xCompilerOut = subprocess.run(
         ["python", "Compiler.py", "-i", "source.baabnq"], 
-        timeout=1,
+        timeout=10,
         capture_output=True    
     ).stdout.decode("ascii")
     
@@ -46,7 +46,7 @@ def run():
 
     xVMOut = subprocess.run(
         ["python", "vm.py", "-f", "build.s1"], 
-        timeout=1,
+        timeout=10,
         capture_output=True
     )
     print(xVMOut)
