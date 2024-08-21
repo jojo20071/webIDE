@@ -3,16 +3,12 @@ import threading
 import sys
 import io
 import os
-
-import Compiler
-import vm
-
+import subprocess
 
 def error(x):
     raise Exception(x)
 
 app = flask.Flask(__name__)
-Compiler.cUtils.Error = error
 
 
 
@@ -32,51 +28,34 @@ def run():
     xEditorContent = flask.request.get_json()['source']
     print(xEditorContent)
 
-    try:
-        xCompiler = Compiler.cCompiler()
-        xAsm = xCompiler.Compile(xEditorContent)[0]
+    with open("source.baabnq", "w") as xFile:
+        xFile.write(xEditorContent)
 
-    except Exception as E:
-        return str(E)
+    xCompilerOut = subprocess.run(
+        ["python", "Compiler.py", "-i", "source.baabnq"], 
+        timeout=1,
+        capture_output=True    
+    ).stdout.decode("ascii")
+    
+    print(xCompilerOut)
+    
+    xErrorLine = xCompilerOut.split("\n")[-2]
+    if ('error' in xErrorLine.lower()):
+        return xErrorLine
 
 
+    xVMOut = subprocess.run(
+        ["python", "vm.py", "-f", "build.s1"], 
+        timeout=1,
+        capture_output=True
+    )
+    print(xVMOut)
 
-    try:
-        xProg = vm.cProg(xAsm)
-
-        #reset vm state
-        vm.cEnv.xProgIndex = 0
-        vm.cEnv.xRun = True
-        vm.cEnv.Acc(0)
-        vm.cEnv.Reg(0)
-        vm.cEnv.xHeapAlloc = []
-        (vm.cEnv.xMem[i](0) for i in range(vm.xIntLimit))
-
-        
-        xTempStd = sys.stdout
-        xStdOutCap = io.StringIO()
-        sys.stdout = xStdOutCap
-        
-        xRunner = threading.Thread(target = xProg.Run)
-        xRunner.start()
-        xRunner.join(timeout = 0.1)
-                        
-        sys.stdout = xTempStd
-
-        if not xRunner.is_alive():
-            xOutput = xStdOutCap.getvalue()
-            print(xOutput)
-            return xOutput
-
-        else:
-            xVM.xRunning = False
-            xRunner.join()
-            return 'Timeout reached, killing runner (sorry QwQ)'
-
-    except Exception as E:
-        print(E)
-        
-        return 'Error: VM crashed, probably some misspelled label, or other symbol mismatch.'
+    return (
+        xVMOut.stderr if 
+        xVMOut.returncode else 
+        xVMOut.stdout
+    ).decode("ascii")
     
     
 if __name__ == '__main__':

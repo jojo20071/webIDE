@@ -234,7 +234,7 @@ class cProg:
             return f'{self.xOp.__name__[1:]} {self.xArg}'
         
         def LabRes(self, xLabels):
-            if self.xArg.isdigit(): return #good
+            if type(self.xArg) is int or self.xArg.isdigit(): return #good
             elif self.xArg not in xLabels: 
                 cUtils.Error(f"Invaild Label: {self.xArg}")
                 
