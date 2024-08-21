@@ -6,25 +6,11 @@
         <style>
             body { 
                 background-color: black; 
-                font-family: 'Courier New', monospace;
+                font-family: Consolas, monospace;
                 color: white;
             }
                         
-            textarea {
-                vertical-align: top;
-                margin: 0px;
-                padding: 0px;
-                padding-left: 5px;
-                display: inline-block;
-                width:  600px;
-                height: 300px;   
-                border: 1px solid white;
-                background-color: black; 
-                font-family: inherit;
-                color: white;
-            }
-            
-                     
+                                
             .center {
                 display: table; margin: auto;            
             }
@@ -33,26 +19,25 @@
                 text-align: center;
                 margin-bottom: 30px
             }
-         
-            input {
-                background-color: #3A7800; 
-                color: #6CD97E;
-                border: 0px;
-            }
-            
-            input:hover {
-                background-color: #3AD500;
-                color: #FFFFFF;
-                border: 0px;
-            }
-
+                     
             .biggreenbutton {
                 border-radius: 10px;
                 margin: 10px 10px;
                 height: 50px;
                 width:  100px;
-                font-size: 100%;
+                font-size: 110%;
+
+                background-color: #3A7800;
+                color: #6CD97E;
+                border: 0px;
             }
+            
+            .biggreenbutton:hover {
+                background-color: #3AD500;
+                color: #FFFFFF;
+                border: 0px;
+            }
+
             
             .embed {
                 width:  600px;
@@ -62,6 +47,7 @@
                 border-radius: 10px;
                 margin: 5px;
                 padding: 5px;
+                overflow: auto
             }
          
         </style>
@@ -71,8 +57,13 @@
             <h1 class="heading">Baabnq Web IDE</h1>
             
             <div>
-                <div class="embed baabnq-source"    id="editor" contenteditable="true">A</div>
-                <div class="embed"                  id="output" readonly>A</div>
+                <pre class="embed baabnq-source"    id="editor" contenteditable="true">
+use 'libs/string.baabnq';
+static 'hello world' _p;
+push _p;
+sub String::Print;
+                </pre>
+                <div class="embed" id="output" readonly></div>
             </div>
 
             <br>

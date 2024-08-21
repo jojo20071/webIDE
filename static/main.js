@@ -1,6 +1,11 @@
 
 
 
+var editor = document.getElementById("editor");
+var output = document.getElementById("output");
+
+
+
 
 document.getElementById("runButton").addEventListener("click", run);
 document.addEventListener("keypress", (e) => {
@@ -10,9 +15,12 @@ document.addEventListener("keypress", (e) => {
 
 
 function run() {
+    
     sendPost({
-        'source': document.getElementById("editor").innerText
+        'source': editor.innerText
     }, "/run");
+    
+    updateHighlighTag(editor);
 }
 
 
@@ -25,7 +33,7 @@ function sendPost(data, dest) {
     http.onreadystatechange = () => {
         if (http.readyState == 4 && http.status == 200)
             setOutput(http.responseText);
-    }
+    };
 
 
     http.send(JSON.stringify(data));
@@ -34,5 +42,5 @@ function sendPost(data, dest) {
 
 
 function setOutput(msg) {
-    document.getElementById("output").innerHTML = msg;
+    output.innerHTML = msg;
 }
