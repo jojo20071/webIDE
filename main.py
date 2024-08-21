@@ -35,11 +35,15 @@ def run():
     with open("source.baabnq", "w") as xFile:
         xFile.write(xEditorContent)
 
-    xCompilerOut = subprocess.run(
-        ["python", "Compiler.py", "-i", "source.baabnq"], 
-        timeout=10,
-        capture_output=True    
-    ).stdout.decode("ascii")
+    try:
+        xCompilerOut = subprocess.run(
+            ["python", "Compiler.py", "-i", "source.baabnq"], 
+            timeout=10,
+            capture_output=True    
+        ).stdout.decode("ascii")
+    except subprocess.TimeoutExpired:
+        return 'Error: Compiler timed out, something took too long.'
+
     
     print(xCompilerOut)
     
@@ -47,12 +51,16 @@ def run():
     if ('error' in xErrorLine.lower()):
         return xErrorLine
 
+    try:
+        xVMOut = subprocess.run(
+            ["python", "vm.py", "-f", "build.s1"], 
+            timeout=10,
+            capture_output=True
+        )
+    except subprocess.TimeoutExpired:
+        return 'Error: Virtual Machine timed out, something took too long.'
 
-    xVMOut = subprocess.run(
-        ["python", "vm.py", "-f", "build.s1"], 
-        timeout=10,
-        capture_output=True
-    )
+
     print(xVMOut)
 
     return (
