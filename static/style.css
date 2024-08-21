@@ -1,0 +1,48 @@
+body { 
+    background-color: black; 
+    font-family: Consolas, monospace;
+    color: white;
+}
+            
+                    
+.center {
+    display: table; 
+    margin: auto;
+    width: 80%;
+}
+
+.heading {
+    text-align: center;
+    margin-bottom: 30px
+}
+         
+.biggreenbutton {
+    border-radius: 10px;
+    margin: 10px 10px;
+    height: 50px;
+    width:  100px;
+    font-size: 110%;
+
+    background-color: #3A7800;
+    color: #6CD97E;
+    border: 0px;
+}
+
+.biggreenbutton:hover {
+    background-color: #3AD500;
+    color: #FFFFFF;
+    border: 0px;
+}
+
+
+.embed {
+    width: 45%;
+    height: 300px;
+    float: left;
+    border: 1px solid #333;
+    border-radius: 10px;
+    margin: 5px;
+    padding: 5px;
+    overflow: auto;
+    font-size: 1.2em;
+}
