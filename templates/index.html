@@ -9,23 +9,25 @@
         <div class="center">
             <h1 class="heading">Baabnq Web IDE</h1>
             
-            <div>
-<pre class="embed baabnq-source"    id="editor" contenteditable="true">
+            <div style="display: flex; flex-direction: row;">
+<pre class="embed baabnq-source" id="editor" contenteditable="true">
 use 'libs/string.baabnq';
-static 'hello world' _p;
-push _p;
+static 'Hello, World!' _sHello;
+push _sHello;
 sub String::Print;
 </pre>
                 <pre class="embed" id="output" readonly></pre>
             </div>
 
-            <br>
-            <input class="biggreenbutton" id="runButton" type="button" value="Run"/>
-            <text>Or press Ctrl + Enter to run</text>
-            
-            <br>
-            <br>
-            <text>The syntax highlighter will only update when the editor goes out of focus or when running the program. <br> Sorry for the technical limitations.</text>
+            <br/>
+            <div>
+                <input class="biggreenbutton" id="runButton" type="button" value="Run"/>
+                <text>Or press Ctrl + Enter to run</text>
+                <br>
+                <br>
+                <text>The syntax highlighter will only update when the editor goes out of focus or when running the program. <br> Sorry for the technical limitations.</text>
+            </div>
+                
         </div>
         
         

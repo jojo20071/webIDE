@@ -38,7 +38,6 @@ body {
 .embed {
     width: 45%;
     height: 300px;
-    float: left;
     border: 1px solid #333;
     border-radius: 10px;
     margin: 5px;
