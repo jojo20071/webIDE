@@ -25,7 +25,7 @@ var lexBaabnq = (raw) => {
         if (OP.includes(content))    return { categ : "OP" , style : "color: red" };
         if (content.startsWith('"')) return { categ : "CMT", style : "color: gray" };
         
-        let GENERIC_COMMANDS = ["put", "use", "putchr", "print", "input"];
+        let GENERIC_COMMANDS = ["put", "use", "putchr", "print", "input", "asm"];
         let FLOWCTL_COMMANDS = ["lab", "jump"];
         let STACKIO_COMMANDS = ["push", "pull", "sub", "return"];
         let MEMORY__COMMANDS = ["static", "new", "free", "<-", "->"];
